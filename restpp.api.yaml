@@ -1,13 +1,10 @@
 openapi: 3.0.0
 info:
-  title: TigerGraph REST API ++
+  title: TigerGraph REST++ API
   description: Title
   version: 1.0.0
   contact: {}
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/gruby_karol/tgapi/1.0.0
   - url: "http://192.168.0.105:9000"
 
 paths:

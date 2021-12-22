@@ -1,0 +1,8 @@
+target/
+.idea/
+*.iml
+*.swp
+*.DS_Store
+*.report
+*.priv.*
+*.priv
