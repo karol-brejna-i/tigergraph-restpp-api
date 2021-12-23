@@ -1,223 +1,122 @@
 openapi: 3.0.0
 info:
-  title: TigerGraph REST API ++
+  title: TigerGraph REST++ API
   description: Title
   version: 1.0.0
   contact: {}
 servers:
-  # Added by API Auto Mocking Plugin
-  - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/gruby_karol/tgapi/1.0.0
   - url: "http://192.168.0.105:9000"
-
+tags:
+  - name: done
+    description: Specification tested
+  - name: query
+    description: Endpoints for querying
 paths:
-  "/version":
+  /query/{graph_name}/{query_name}:
     get:
-      summary: Show component versions
+      summary: Run an installed query
       description: |
-        This endpoint returns the GIT versions of all components of the system.
-
-        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_all_endpoints
-      operationId: getVersionInformation
-      tags:
-        - works
-      responses:
-        "200":
-          description: JSON containing the version information.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-
-  "/echo/{graph_name}":
-    get:
-      summary: Ping database (GET)
-      description: |
-        A simple diagnostic utility.
-        Expected response is {"message": "Hello GSQL"}.
-
-        https://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#get-echo-and-post-echo
-      operationId: pingDatabaseGet
-      tags:
-        - echo
-        - works
-      responses:
-        "200":
-          description: "Ok"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    post:
-      summary: Ping database (POST)
-      #works
-      description: |
-        A simple diagnostic utility.
-        Expected response is {"message": "Hello GSQL"}.
-
-        https://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#get-echo-and-post-echo
-      operationId: pingDatabasePost
-      tags:
-        - echo
-        - works
-      responses:
-        "200":
-          description: "Ok"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-
-  "/endpoints/{graph_name}":
-    get:
-      summary: List all endpoints
-      tags:
-        - works
-      description: |
-        This endpoint returns a list of the installed endpoints and their parameters.
-        There are three types of endpoints, described in the table below.
-          * builtin - Endpoints presinstalled in TigerGraph (like this one)
-          * dynamic - Endpoints generated when installing GSQL queries
-          * static - User installed endpoints
-
-        To include one or more of the endpoint types in the output,  include the endpoint type
-        in the parameter query string and set its value to true.
-        If no type parameters are provided, all endpoints are returned.
-
-        https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_all_endpoints
-      operationId: listRestApiEndpoints
+        Each time a new TigerGraph query is installed, a dynamic endpoint is generated.
+        This new endpoint enables the user to run the new TigerGraph query through HTTP requests
+        and giving the parameters in URL or in a data payload. In the case of a GET request,
+        parameters should be passed in through the query string.
+      operationId: runInstalledQueryGet
       parameters:
-        - name: builtin
+        - name: read_committed
           in: query
+          description: |
+            Boolean value that indicates whether to use read-committed isolation level for the query.
+            At the read committed level, it is guaranteed that any data read is committed at the moment it is read.
+            By default, it is off.
+          required: false
           schema:
-            type: string
-            example: "true"
-          description: (Optional) Endpoints presinstalled in TigerGraph (like this one).
-        - name: dynamic
-          in: query
-          schema:
-            type: string
-            example: "true"
-          description: (Optional) Endpoints generated when installing GSQL queries.
-        - name: static
-          in: query
-          schema:
-            type: string
-            example: "true"
-          description: (Optional) User installed endpoints.
-      responses:
-        "200":
-          description: ""
-          content:
-            application/json:
-              schema:
-                type: object
-
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-
-  "/statistics/{graph_name}":
-    get:
-      summary: Show query performance
-      description: |
-        This endpoint returns real-time query performance statistics over the given time period,
-        as specified by the seconds **parameter. The seconds parameter must be a positive integer less than or equal to 60.
-      operationId: getPerformanceStatistics
-      tags:
-        - works
-      parameters:
-        - name: seconds
-          in: query
-          schema:
-            type: string
-            example: "10"
-          description: "Duration of statistics collection. Interger, 1 ≤ n ≤ 60"
-      responses:
-        "200":
-          description: ""
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StatisticsResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-  "/query/{graph_name}/{query}":
-    get:
-      summary: Run installed query
-      description: |
-        Execute a user-defined, installed query.
-
-
-        To see a list of the parameter names and types for the user-installed GSQL queries,
-        run the following REST++ request (see GET_endpoints): `curl -X GET \"http://localhost:9000/endpoints?dynamic=true\"`"
-        GSQL-THREAD-LIMIT:
-
-        When using a GET request to run an installed query, the query parameters are passed in through the query string of the URL.
-      operationId: runInstalledQuery
-      tags:
-        - old
-        - query
-      parameters:
+            type: boolean
         - in: query
           name: params
+          description: |
+            When using a GET request to run an installed query, the query parameters are passed in through the query string of the URL.
           schema:
             type: object
-            # If the parameter values are of specific type, e.g. string:
             additionalProperties:
               type: string
           style: form
           explode: true
+      tags:
+        - query
+        - done
       responses:
-        "200":
-          description: ""
+        '200':
+          description: Query result
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryResponse'
+    post:
+      summary: Run an installed query
+      description: |
+        Each time a new TigerGraph query is installed, a dynamic endpoint is generated.
+        This new endpoint enables the user to run the new TigerGraph query through HTTP requests
+        and giving the parameters in URL or in a data payload.
 
+        Users can run queries through a POST request, which allows them to pass query parameters in JSON.
+        This is especially helpful when the query takes complex parameters.
+      operationId: runInstalledQueryPost
+      parameters:
+        - name: read_committed
+          in: query
+          description: |
+            Boolean value that indicates whether to use read-committed isolation level for the query.
+            At the read committed level, it is guaranteed that any data read is committed at the moment it is read.
+            By default, it is off.
+          required: false
+          schema:
+            type: boolean
+      requestBody:
+        description: Optional description in *Markdown*
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      tags:
+        - query
+        - done
+      responses:
+        '200':
+          description: Query result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
     parameters:
       - name: graph_name
         in: path
+        description: Graph name
         required: true
         schema:
           type: string
-          example: "{{graph_name}}"
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-      - name: query
+      - name: query_name
         in: path
+        description: Query name
         required: true
         schema:
           type: string
-          example: ""
-        description: The name of the query to be executed.
       - in: header
         name: GSQL-REPLICA
+        description: |
+          f you have a TigerGraph HA cluster, you can specify a query to run on a particular replica
+          with the HTTP header GSQL-REPLICA. The value of the header needs to be an integer within
+          the range one to the replication factor of the cluster. If you supply a invalid value for the header,
+          the request will return an error.
         schema:
           type: number
         required: false
       - in: header
         name: GSQL-THREAD-LIMIT
+        description: |
+          When running a query through RESTPP, you can specify a limit on the number of threads that the query is allowed to use on each node.
+          The number of threads used by a query means the number of vCPUs used by the query.
+          By default, a query will use all threads that are available on a machine.
         schema:
           type: number
         required: false
@@ -232,693 +131,674 @@ paths:
           type: number
         required: false
 
-  "/abortquery/{graph_name}":
-    get:
-      summary: Abort running queries
-      tags:
-        - old
-      #suspicious
-      description: |
-        This endpoint safely aborts a selected query by ID or all queries of an endpoint by endpoint URL of a graph.
-
-        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_abort_a_query
-      operationId: abortRunningQueries
-      parameters:
-        - name: requestid
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) The id of a query request to be aborted, or \"all\" to abort all queries."
-        - name: url
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: (Optional) The URL of the query endpoint.
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/allpaths/{graph_name}":
-    post:
-      summary: All Paths Search
-      tags:
-        - old
-
-      description: "Find all paths between the source vertex set and the target vertex set. These, plus edge filters and additional paramters are specified as a JSON payload in the request body. The format is:\n```json\n{\n  \"sources\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"targets\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}, {\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"edgeFilters\":[{\"type\":\"<edge_type>\",\"condition\":\"<conditions>\"\"}],\n  \"maxLength\":<max_length>\n}\n```\n\n* `maxLength`: (REQUIRED) Maximum length of a shortest path. Default is 6.\n\nSee [documentation](https://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#input-parameters-and-output-format-for-path-finding) for more details on input parameters and output format.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#post-allpaths-graphname-all-paths-search"
-      operationId: allPathsSearch
-      requestBody:
-        content:
-          text/plain:
-            example: "{\n  \"sources\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"targets\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}, {\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"edgeFilters\":[{\"type\":\"<edge_type>\",\"condition\":\"<conditions>\"}],\n  \"maxLength\":<max_length>\n}"
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/builtins/{graph_name}":
-    post:
-      summary: Get edge count
-      tags:
-        - old
-        - builtins
-      description: "This function returns the number of edges of the given type.\n\nThere are three parameters in the request body:\n* `type`: The edge type name, or \"*\", which indicates all edge types.\n* `from_type`: Given a vertex type, the function only includes edges whose source vertex type is the given type. \"*\" indicates all types. Default is all types. If a specific edge type is given, giving a correct `from_type` can speed up the process.\n* `to_type`: Given a vertex type, the function only includes edges whose destination vertex type is the given type. \"*\" indicates all types. Default is all types.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#post-builtins-graph_name"
-      operationId: getEdgeCount
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                from_type:
-                  type: string
-                  example: "*"
-                function:
-                  type: string
-                  example: stat_edge_number
-                to_type:
-                  type: string
-                  example: "*"
-                type:
-                  type: string
-                  example: "*"
-            example:
-              from_type: "*"
-              function: stat_edge_number
-              to_type: "*"
-              type: "*"
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/ddl/{graph_name}":
-    post:
-      summary: Run loading job
-      tags:
-        - old
-
-      description: "This endpoint is for loading data the the graph called `graph_name`.\n\nIn the request you **must** specify the `filename=` parameter in the query. Its value **must** refer to _filevar_ specified by a `DEFINE FILENAME` statement in your loader job (its name is specified by the required `tag` parameter). The REST API request will run the loading job with the `USING` clause, setting a new value to the referenced _filevar_. (This new value will be some temporary directory on the server's local disk into which the data file has been uploaded by the REST API request). Thus, if there was a hard-coded reference to a file path, that is lost/ignored.\n\nFurthermore, according to the [documentation](https://docs.tigergraph.com/dev/gsql-ref/ddl-and-loading/running-a-loading-job#options), if a loading job is run with the `USING` clause, then only those steps in the loading job will be executed whose _filevar_ is mentioned in the `USING` clause. Since you can specify only one `filename=` parameter in the REST API URL, you can load only one file in a single request, and that file will be the one that you just uploaded. The rest of _filevars_ will be ignored and so will be the matching loading steps. The documentation also says that if the `USING` clause is omitted, then the entire loading job will be run, but you can't trick the REST API into this, as you cannot omit the `filename=` parameter.\n\nSo, if you have to load a number of different files, you need to call the `/ddl/` request once for each. The good news is that you can have a single loading job, all you need to do is to refer to a different _filevar_ each time.\n\nExample:\nIf your loading job is something like this:\n```sql\nCREATE LOADING JOB MyJob FOR GRAPH MyGraph {\n\n    DEFINE FILENAME f1;\n    DEFINE FILENAME f2;\n\n    LOAD f1\n        TO VERTEX v1 VALUES (...)\n        USING SEPARATOR = \",\";\n\n    LOAD f2\n        TO EDGE e1 VALUES (...)\n        USING SEPARATOR = \",\";\n}\n```\nthen you can/need to call the REST API twice:\n```shell\ncurl -X POST --data-binary @file1.csv \"http://localhost:9000/ddl/MyGraph?tag=MyJob&tag=f1\"\ncurl -X POST --data-binary @file2.csv \"http://localhost:9000/ddl/MyGraph?tag=MyJob&tag=f2\"\n```\n\nNOTE: you must prefix the filename with \"@\" otherwise the filename itself will be considered the data to be loaded.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#post-ddl-graph_name-run-a-loading-job\n\nhttps://docs.tigergraph.com/dev/gsql-ref/ddl-and-loading/running-a-loading-job#running-a-loading-job"
-      operationId: runLoadingJob
-      parameters:
-        - name: tag
-          in: query
-          schema:
-            type: string
-          description: (REQUIRED) Loading job name defined in the DDL loading job.
-        - name: filename
-          in: query
-          schema:
-            type: string
-          description: (REQUIRED) File variable name or filepath for the file containing the data.
-        - name: sep
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Separator of CSV data. Default is comma.\nIf your data is JSON, you do not need to specify this parameter."
-        - name: eol
-          in: query
-          schema:
-            type: string
-          description: "(Optional) End-of-line character. Default is '\\n`.\nOnly one character is allowed, except for the special case \"\\r\\n\""
-        - name: ack
-          in: query
-          schema:
-            type: string
-          description: "(Optional)Specifies whether REST++ needs to get acknowledgement from GPEs.\n• If set to \"none\", it doesn't need to get acknowledgement from any GPE.\n• If set to \"all\" (default), it needs to get acknowledgement from all GPEs."
-        - name: timeout
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Timeout in seconds. If set to 0, use system-wide endpoint timeout setting."
-        - name: vertexmustexist
-          in: query
-          schema:
-            type: string
-          description: "(Optional) if set to true, skips loading edges if both vertices do not exist."
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/graph/{graph_name}":
-    post:
-      summary: Upsert vertices and edges
-      description: "This endpoint can upsert vertices and/or edges into the graph called `graph_name`.\n\nDue to the cost of checking for the existence of an edge or a vertex, the standard API does not support separate update and create (insert) operations. Instead, an upsert operation, a combination of update and insert, is provided.\n* If the target vertex or edge already exists, it is updated with the values specified in the request.\n* If the vertex or edge does not yet exist, the action depends on the operator chosen by the user. Some operators will direct the endpoint to create a new vertex or edge using the attribute values in the request.\nThe response is the number of vertices and edges that were accepted. The API uses JSON format to describe the vertices and edges to be upserted. The JSON code can be stored in a text file or specified directly in a command line. There is a maximum size for a POST data payload. See documentation for format of JSON code and limitation.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#post-graph-graph_name-upsert-the-given-data"
-      operationId: upsertVerticesAndEdges
-      parameters:
-        - name: new_vertex_only
-          in: query
-          schema:
-            type: string
-          description: "(Optional) If set to true, new vertices will be insterted, but existing vertices will nto be updated."
-        - name: vertex_must_exist
-          in: query
-          schema:
-            type: string
-          description: "(Optional) if set to true, skips loading edges if both vertices do not exist."
-        - name: ack
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Specifies whether REST++ needs to get acknowledgement from GPEs.\n• If set to \"none\", it doesn't need to get acknowledgement from any GPE.\n• If set to \"all\" (default), it needs to get acknowledgement from all GPEs."
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-            example: {}
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/graph/{graph_name}/delete_by_type/vertices/{vertex_type}":
+  /graph/delete_by_type/vertices/{vertex_type}/:
     delete:
-      summary: Delete vertices by type
-      description: "This endpoint deletes all vertices of the given vertex type in the graph called `graph_name`.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#delete-graph-graph_name-delete_by_type-vertices"
-      operationId: deleteVerticesByType
-      parameters:
-        - name: permanent
-          in: query
-          schema:
-            type: string
-          description: "(Optional) If \"permanent\" is true, the deleted vertex ids can never be inserted back, unless the graph is dropped or the graph store is cleared."
-        - name: ack
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Specifies whether REST++ needs to get acknowledgement from GPEs.\n• If set to \"none\", it doesn't need to get acknowledgement from any GPE.\n• If set to \"all\" (default), it needs to get acknowledgement from all GPEs."
+      summary: TBD
       responses:
-        "200":
-          description: ""
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
     parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
       - name: vertex_type
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (REQUIRED) The type of vertex or vertices to be deleted.
-  "/graph/{graph_name}/edges/{source_vertex_type}/{source_vertex_id}/{edge_type}/{target_vertex_type}/{target_vertex_id}":
+          example: Person
+        description: The type of vertex.
+
+  /graph/edges/{source_vertex_type}/{source_vertex_id}/{edge_type}/{target_vertex_type}/{target_vertex_id}:
     delete:
-      summary: Delete edges
-      description: "This endpoint deletes the given edge(s).\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#delete-graph-graph_name-edges"
-      operationId: deleteEdges
-      parameters:
-        - name: filter
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Specifies a filtert list that is a comma-separated list of filter, and each filter is the concatenation of an attribute, an operator, and a value (with no white spaces separating the parts).\nThe following six comparison operators are supported:\nattr=x | attr!=x | attr>x | attr>= x | attr<x | attr>=x"
-        - name: limit
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Sets a limit on the number of edges returned from a query request.\nNote that there is also a system limit of 10240 on the number of edges returned. The user-defined limit cannot exceed this system limit."
-        - name: sort
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Returns results sorted by given attributes. The format is sort=list_of_index_attributes.\n• sort=attr : sort by attribute attr1 in ascending order\n• sort=-attr1 : sort by attribute attr1 in descending order\n• sort=attr1,-attr2 : first sort by attr1 in ascending order, then sort by attr2 in descending order"
-        - name: permanent
-          in: query
-          schema:
-            type: string
-          description: "(Optional) If \"permanent\" is true, the deleted vertex ids can never be inserted back, unless the graph is dropped or the graph store is cleared."
-        - name: timeout
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Timeout in seconds. If set to 0, use system-wide endpoint timeout setting."
+      summary: TBD
       responses:
-        "200":
-          description: ""
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    get:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
     parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
       - name: source_vertex_type
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (REQUIRED) The type of the source vertex.
-      - name: source_vertex_id
-        in: path
-        required: true
-        schema:
-          type: string
-          example: ""
-        description: (REQUIRED) The ID of the source vertex.
+          example: Person
+        description: The type of vertex.
       - name: edge_type
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: "(Optional) The type name of the edges. If omitted or specified as \"_\", then all edge types are permitted. If skipped, then target_vertex_type and target_vertex_id must be skipped too."
+          example: LIKES
+        description: |
+          The type name of the edges.
+
+          *Note:* Use "_" for edge_type in the URL to permit any edge type.
       - name: target_vertex_type
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (Optional) The type of the target vertex.
-      - name: target_vertex_id
-        in: path
-        required: true
-        schema:
-          type: string
-          example: ""
-        description: (Optional) The ID of the target vertex.
-  "/graph/{graph_name}/edges/{source_vertex_type}/{source_vertex_id}/{edge_type}/{target_vertext_type}/{target_vertex_id}":
-    get:
-      summary: Get edges
-      description: "This endpoint returns all edges which connect to a given vertex ID in the graph called `graph_name`. Source vertex type and ID must be given. The user may optionally specify the edge type, the target vertex type, and the target vertex ID.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#get-graph-graph_name-edges\n\nAdditional parameters allows selecting (or excluding) attributes of the edge type; filtering, sorting and limiting the result set.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#advanced-parameters-for-graph-graph_name-vertices-and-graph-graph_name-edges"
-      operationId: getEdges
-      parameters:
-        - name: select
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Specifies which attributes are to be returned or to be excluded from results:\n• select=attr1,attr2 returns only attributes attr1 and attr2\n• select=-attr1,-attr2 returns all attributes except attributes attr1 andattr2\n• select=-_ returns no attribute at all"
-        - name: filter
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Specifies a filtert list that is a comma-separated list of filter, and each filter is the concatenation of an attribute, an operator, and a value (with no white spaces separating the parts).\nThe following six comparison operators are supported:\nattr=x | attr!=x | attr>x | attr>= x | attr<x | attr>=x"
-        - name: limit
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Sets a limit on the number of edges returned from a query request.\nNote that there is also a system limit of 10240 on the number of edges returned. The user-defined limit cannot exceed this system limit."
-        - name: sort
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Returns results sorted by given attributes. The format is sort=list_of_index_attributes.\n• sort=attr : sort by attribute attr1 in ascending order\n• sort=-attr1 : sort by attribute attr1 in descending order\n• sort=attr1,-attr2 : first sort by attr1 in ascending order, then sort by attr2 in descending order"
-        - name: count_only
-          in: query
-          schema:
-            type: string
-          description: (Optional) Returns the number of edges only if true.
-        - name: timeout
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Timeout in seconds. If set to 0, use system-wide endpoint timeout setting."
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-      - name: source_vertex_type
-        in: path
-        required: true
-        schema:
-          type: string
-          example: ""
-        description: (REQUIRED) The type of the source vertex.
+          example: Person
+        description: The type of vertex.
       - name: source_vertex_id
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (REQUIRED) The primary_id of the source vertex.
-      - name: edge_type
-        in: path
-        required: true
-        schema:
-          type: string
-          example: ""
-        description: "(Optional) The type name of the edges. If omitted or specified as \"_\", then all edge types are permitted. If skipped, then target_vertex_type and target_vertex_id must be skipped too."
-      - name: target_vertext_type
-        in: path
-        required: true
-        schema:
-          type: string
-          example: ""
-        description: (Optional) The type of the target vertex.
+          example: 11223342243
+        description: The ID of the vertex.
       - name: target_vertex_id
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (Optional) The primary_id of the target vertex.
-  "/graph/{graph_name}/vertices/{vertex_type}":
+          example: 11223342243
+        description: The ID of the vertex.
+
+  /graph/vertices/{vertex_type}/{vertex_id}:
     delete:
-      summary: Delete vertices
-      description: "This endpoint deletes the given vertex or vertices in the graph called `graph_name` according to the specified `filter` (equivalent to a `WHERE` condition).\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#delete-graph-graph_name-vertices\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#advanced-parameters-for-graph-graph_name-vertices-and-graph-graph_name-edges"
-      operationId: deleteVertices
-      parameters:
-        - name: filter
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Specifies a filter list that is a comma-separated list of filter, and each filter is the concatenation of an attribute, an operator, and a value (with no white spaces separating the parts).\nThe following six comparison operators are supported:\nattr=x | attr!=x | attr>x | attr>= x | attr<x | attr>=x"
-        - name: permanent
-          in: query
-          schema:
-            type: string
-          description: "(Optional) If \"permanent\" is true, the deleted vertex ids can never be inserted back, unless the graph is dropped or the graph store is cleared."
-        - name: timeout
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Timeout in seconds. If set to 0, use system-wide endpoint timeout setting."
+      summary: TBD
       responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-      - name: vertex_type
-        in: path
-        required: true
-        schema:
-          type: string
-          example: ""
-        description: (REQUIRED) The type of vertex or vertices to be deleted.
-  "/graph/{graph_name}/vertices/{vertex_type}/{vertex_id}":
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
     get:
-      summary: Get vertices
-      description: "This endpoint returns all vertices having the type `vertex_type` in the graph called `graph_name`, if `vertex_id` is not specified. If `count_only` parameter is `true`, then only the number of (matching) vertices is returned (see info on additional query parameters below).\n\nAlternatively, the returns the details of  particular vertex when its _primary_id_ specified in the `vertex_id` field.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#get-graph-graph_name-vertices\n\nAdditional parameters allows selecting (or excluding) attributes of the vertex type; filtering, sorting and limiting the result set.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#advanced-parameters-for-graph-graph_name-vertices-and-graph-graph_name-edges"
-      operationId: getVertices
-      parameters:
-        - name: select
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Specifies which attributes are to be returned or to be excluded from results:\n• select=attr1,attr2 returns only attributes attr1 and attr2\n• select=-attr1,-attr2 returns all attributes except attributes attr1 andattr2\n• select=-_ returns no attribute at all"
-        - name: filter
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Specifies a filtert list that is a comma-separated list of filter, and each filter is the concatenation of an attribute, an operator, and a value (with no white spaces separating the parts).\nThe following six comparison operators are supported:\nattr=x | attr!=x | attr>x | attr>= x | attr<x | attr>=x"
-        - name: limit
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Sets a limit on the number of vertices returned from a query request.\nNote that there is also a system limit of 10240 on the number of vertices returned. The user-defined limit cannot exceed this system limit."
-        - name: sort
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Returns results sorted by given attributes. The format is sort=list_of_index_attributes.\n• sort=attr : sort by attribute attr1 in ascending order\n• sort=-attr1 : sort by attribute attr1 in descending order\n• sort=attr1,-attr2 : first sort by attr1 in ascending order, then sort by attr2 in descending order"
-        - name: count_only
-          in: query
-          schema:
-            type: string
-          description: (Optional) Returns the number of vertices only if true.
-        - name: timeout
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) Timeout in seconds. If set to 0, use system-wide endpoint timeout setting."
+      summary: TBD
       responses:
-        "200":
-          description: ""
-    delete:
-      summary: Delete vertex by ID
-      description: "This endpoint deletes the vertex with the specified ID in the graph called `graph_name`.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#delete-graph-graph_name-vertices"
-      operationId: deleteVertexById
-      parameters:
-        - name: permanent
-          in: query
-          schema:
-            type: string
-          description: "(Optional) If \"permanent\" is true, the deleted vertex ids can never be inserted back, unless the graph is dropped or the graph store is cleared."
-        - name: timeout
-          in: query
-          schema:
-            type: string
-          description: "(Optional) Timeout in seconds. If set to 0, use system-wide endpoint timeout setting."
-      responses:
-        "200":
-          description: ""
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
     parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
       - name: vertex_type
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (REQUIRED) The type of vertex to be deleted.
+          example: Person
+        description: The type of vertex.
       - name: vertex_id
         in: path
         required: true
         schema:
           type: string
-          example: ""
-        description: (Optional) The ID of the vertex to be deleted.
-  /gsqlserver/gsql/schema:
-    get:
-      summary: Get schema (vertex and edge) details
-      description: "If a vertex or edge name is provided for the `type` parameter: returns the definition of the requested vertex or edge type.\n\nIf no `type` parameter is specified: returns the schema of a graph. The output contains three top-level elements: `GraphName`, `VertexTypes` and `EdgeTypes`.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#get-the-graph-schema-get-gsql-schema"
-      operationId: getSchemaVertexAndEdgeDetails
-      parameters:
-        - name: graph
-          in: query
-          schema:
-            type: string
-            example: "{{graph_name}}"
-          description: (REQUIRED) Name of graph.
-        - name: type
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: (Optional) The name of either a vertex type or an edge type.
-      requestBody:
-        content:
-          application/octet-stream: {}
-      responses:
-        "200":
-          description: ""
-  /gsqlserver/gsql/udtlist:
-    get:
-      summary: List user defined types
-      description: Returns the definition of User Defined Types (UDTs).
-      operationId: listUserDefinedTypes
-      requestBody:
-        content:
-          application/octet-stream: {}
-      responses:
-        "200":
-          description: ""
-  /gsqlserver/interpreted_query:
-    post:
-      summary: Run interpreted query
-      description: "This endpoint runs a GSQL query in Interpreted Mode. The query body should be supplied at the data payload, and the query's parameters are supplied as the URL's query string.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#post-gsqlserver-interpreted_query-run-an-interpreted-query"
-      operationId: runInterpretedQuery
-      requestBody:
-        content:
-          text/plain:
-            example: "INTERPRET QUERY (<params>) FOR GRAPH <graph_name> {\n    <statements>;\n}"
-      responses:
-        "200":
-          description: ""
-  /requesttoken:
-    get:
-      summary: Request token
-      description: "Returns a token (that is required for authorisation of other REST++ requests) based on a secret (created in the database by `CREATE SECRET`).\n\nThis endpoint is available and works only if [REST++ authentication](https://docs.tigergraph.com/admin/admin-guide/user-access-management/user-privileges-and-authentication#rest-authentication)  is enabled.\n\nhttps://docs.tigergraph.com/dev/restpp-api/restpp-requests#requesting-a-token-with-get-requesttoken"
-      operationId: requestToken
-      parameters:
-        - name: secret
-          in: query
-          schema:
-            type: string
-            example: "{{token_secret}}"
-          description: "(REQUIRED) The user's secret."
-        - name: lifetime
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) The lifetime for the token, in seconds. The default is one month, approximately 2.6 million seconds."
-      responses:
-        "200":
-          description: ""
-    put:
-      summary: Refresh token
-      description: "Refreshes a token (that is required for authorisation of other REST++ requests) based on a secret (requested via `GET_requesttoken`).\n\nThis endpoint is available and works only if [REST++ authentication](https://docs.tigergraph.com/admin/admin-guide/user-access-management/user-privileges-and-authentication#rest-authentication)  is enabled.\n\nhttps://docs.tigergraph.com/dev/restpp-api/restpp-requests#refreshing-tokens"
-      operationId: refreshToken
-      parameters:
-        - name: secret
-          in: query
-          schema:
-            type: string
-            example: "{{token_secret}}"
-          description: "(REQUIRED) The user's secret."
-        - name: token
-          in: query
-          schema:
-            type: string
-            example: "{{token}}"
-          description: (REQUIRED) The token to be refreshed.
-        - name: lifetime
-          in: query
-          schema:
-            type: string
-            example: ""
-          description: "(Optional) The lifetime for the token, in seconds. The default is one month, approximately 2.6 million seconds."
-      responses:
-        "200":
-          description: ""
-    delete:
-      summary: Delete token
-      description: "Deletes a token (that is required for authorisation of other REST++ requests).\n\nThis endpoint is available and works only if [REST++ authentication](https://docs.tigergraph.com/admin/admin-guide/user-access-management/user-privileges-and-authentication#rest-authentication)  is enabled.\n\nhttps://docs.tigergraph.com/dev/restpp-api/restpp-requests#deleting-tokens"
-      operationId: deleteToken
-      parameters:
-        - name: secret
-          in: query
-          schema:
-            type: string
-            example: "{{token_secret}}"
-          description: "(REQUIRED) The user's secret."
-        - name: token
-          in: query
-          schema:
-            type: string
-            example: "{{token}}"
-          description: (REQUIRED) The token to be deleted.
-      responses:
-        "200":
-          description: ""
-  "/shortestpath/{graph_name}":
-    post:
-      summary: Shortest Path Search
-      description: "Find the shortest path or paths between the source vertex set and the target vertex set. These, plus edge filters and additional paramters are specified as a JSON payload in the request body. The format is:\n```json\n{\n  \"sources\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"targets\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}, {\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"edgeFilters\":[{\"type\":\"<edge_type>\",\"condition\":\"<conditions>\"\"}],\n  \"maxLength\":<max_lenght>\n  \"allShortestPaths\": <true_or_false>\n}\n```\n\n* `maxLength`: (Optional) Maximum length of a shortest path. Default is 6.\n* `allShortestPaths`: (Optional) If **true**, the endpoint will return all shortest paths between the source and target. Default is **false**, meaning that the endpoint will return only one path.\n\nSee [documentation](https://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#input-parameters-and-output-format-for-path-finding) for more details on input parameters and output format.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#post-shortestpath-graphname-shortest-path-search"
-      operationId: shortestPathSearch
-      requestBody:
-        content:
-          text/plain:
-            example: "{\n  \"sources\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"targets\":[{\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}, {\"type\":\"<vertex_type>\",\"id\":\"<vertex_id>\"}],\n  \"edgeFilters\":[{\"type\":\"<edge_type>\",\"condition\":\"<conditions>}],\n  \"maxLength\":<max_lenght>\n  \"allShortestPaths\": <true_or_false>\n}"
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/showlicenseinfo/{graph_name}":
-    get:
-      summary: Get license information
-      description: DEPRECATED
-      operationId: getLicenseInformation
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-  "/showprocesslist/{graph_name}":
-    get:
-      summary: List running queries
-      description: "This endpoint reports statistics of running queries: the query's request ID, start time, expiration time, and the REST endpoint's URL.\n\nhttps://docs.tigergraph.com/dev/restpp-api/built-in-endpoints#get-running-queries-showprocesslist-graph_name"
-      operationId: listRunningQueries
-      responses:
-        "200":
-          description: ""
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: "{{graph_name}}"
-        description: (Optional) The name of the graph (REQUIRED in case of multiple graph in the database).
-tags:
-  - name: echo
-    description: Echo endpoints
+          example: 11223342243
+        description: The ID of the vertex.
 
+  /graph/{graph_name}/delete_by_type/vertices/{vertex_type}/:
+    delete:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+      - name: vertex_type
+        in: path
+        required: true
+        schema:
+          type: string
+          example: Person
+        description: The type of vertex.
+
+  /graph/{graph_name}/edges/{source_vertex_type}/{source_vertex_id}/{edge_type}/{target_vertex_type}/{target_vertex_id}:
+    delete:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    get:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+      - name: edge_type
+        in: path
+        required: true
+        schema:
+          type: string
+          example: LIKES
+        description: |
+          The type name of the edges.
+
+          *Note:* Use "_" for edge_type in the URL to permit any edge type.
+      - name: target_vertex_type
+        in: path
+        required: true
+        schema:
+          type: string
+          example: Person
+        description: The type of vertex.
+      - name: source_vertex_type
+        in: path
+        required: true
+        schema:
+          type: string
+          example: Person
+        description: The type of vertex.
+      - name: source_vertex_id
+        in: path
+        required: true
+        schema:
+          type: string
+          example: 11223342243
+        description: The ID of the vertex.
+      - name: target_vertex_id
+        in: path
+        required: true
+        schema:
+          type: string
+          example: 11223342243
+        description: The ID of the vertex.
+
+  /graph/{graph_name}/vertices/{vertex_type}/{vertex_id}:
+    delete:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    get:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+      - name: vertex_type
+        in: path
+        required: true
+        schema:
+          type: string
+          example: Person
+        description: The type of vertex.
+      - name: vertex_id
+        in: path
+        required: true
+        schema:
+          type: string
+          example: 11223342243
+        description: The ID of the vertex.
+
+
+
+  /allpaths/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /deleted_vertex_check/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /echo/{graph_name}:
+    get:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /endpoints/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /query_result/{requestid}:
+    get:
+      summary: TBD
+      description: |
+        This endpoint allows you to check the results of queries run in Detached Mode if they have finished running.
+        If the query is still running, the endpoint will respond with an error and a message saying
+        "Unable to retrieve result for query <requestid>". Ensure that the query is finished before checking its result.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: requestid
+        in: path
+        required: true
+        schema:
+          type: string
+          example: 196611.RESTPP_1_1.1630601692834.N
+        description: The id of a query request.
+
+  /query_status/{graph_name}:
+    get:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /rebuildnow/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+
+  /shortestpath/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /showlicenseinfo/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /showprocesslist/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /statistics/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /version/{graph_name}:
+    get:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /abortquery/{graph_name}:
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    get:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /builtins/{graph_name}:
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /ddl/{graph_name}:
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /graph/{graph_name}:
+    post:
+      summary: TBD
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+
+  /restpploader/{graph_name}:
+    post:
+      summary: TBD
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: my_graph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 components:
   schemas:

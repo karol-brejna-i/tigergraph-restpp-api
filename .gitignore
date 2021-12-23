@@ -1,0 +1,10 @@
+target/
+out/
+.idea/
+*.iml
+*.swp
+*.DS_Store
+*.report
+*.priv.*
+*.priv
+swagger-codegen-cli.jar
