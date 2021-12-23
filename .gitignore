@@ -1,4 +1,5 @@
 target/
+out/
 .idea/
 *.iml
 *.swp
@@ -6,3 +7,4 @@ target/
 *.report
 *.priv.*
 *.priv
+swagger-codegen-cli.jar
