@@ -9,10 +9,6 @@ servers:
 tags:
   - name: done
     description: Specification tested
-  - name: todo
-    description: A draft version for the endpoint
-  - name: inprogress
-    description: Some work is needed
   - name: query
     description: Endpoints for querying
 paths:
@@ -47,6 +43,7 @@ paths:
           explode: true
       tags:
         - query
+        - done
       responses:
         '200':
           description: Query result
@@ -83,6 +80,7 @@ paths:
               type: object
       tags:
         - query
+        - done
       responses:
         '200':
           description: Query result
