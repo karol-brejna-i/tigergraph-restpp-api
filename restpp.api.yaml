@@ -182,6 +182,98 @@ paths:
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
+  /rebuildnow/{graph_name}:
+    get:
+      summary: Rebuild graph engine
+      description: |
+        In TigerGraph, when new data is being loaded into the graph (such as new vertices or edges), 
+        data is first stored in memory before it is saved to disk permanently. 
+        TigerGraph runs a rebuild of the Graph Processing Engine (GPE) to commit the data in memory to disk 
+        every 30 seconds, but you can also call this endpoint to trigger a rebuild immediately.
+      operationId: rebuildnowGet
+      tags:
+        - diagnostics
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: Rebuild graph engine
+      description: |
+        In TigerGraph, when new data is being loaded into the graph (such as new vertices or edges), 
+        data is first stored in memory before it is saved to disk permanently. 
+        TigerGraph runs a rebuild of the Graph Processing Engine (GPE) to commit the data in memory to disk 
+        every 30 seconds, but you can also call this endpoint to trigger a rebuild immediately.
+      operationId: rebuildnowPost
+      tags:
+        - diagnostics
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+      - name: threadnum
+        description: |
+          Number of threads used to execute the rebuild. If not specified, the number specified in the .tg.cfg file 
+          ("RebuildThreadNumber") in the home directory of the server on which TigerGraph 
+          is running will be used; it is set to 3 by default. 
+          The maximum value for this parameter is the number of vCPUs per node in your distributed system. 
+          If you are running a single-node server, the maximum is the number of vCPUs on that node. 
+          You can run lscpu in the command line of your Linux server and look in the CPU(s) 
+          column to view the number of vCPUs.
+        in: query
+        required: false
+        schema:
+          type: integer
+          example: 3
+      - name: vertextype
+        description: |
+          Vertex type to perform the rebuild for. If not provided, the rebuild will be run for all the vertex types.
+        in: query
+        required: false
+        schema:
+          type: string
+          example: Person
+      - name: segid
+        description: |
+          Segment ID of the segments to rebuild. If not provided, all segments will be rebuilt. 
+          In general, it is recommended not to provide this parameter and rebuild all segments.
+        in: query
+        required: false
+        schema:
+          type: integer
+          example: 1
+      - name: path
+        description: |
+          Path to save the summary of the rebuild to. If not provided, the default path is /tmp/rebuildnow
+        in: query
+        required: false
+        schema:
+          type: string
+          example: /tmp/rebuildnow
+      - name: force
+        description: |
+          Boolean value that indicates whether to perform rebuilds for segments for which there are no records of new data. 
+          Normally, a rebuild would skip such segments, but if force is set true, the segments will not be skipped.
+        in: query
+        required: false
+        schema:
+          type: boolean
+          example: false
+
   /query/{graph_name}/{query_name}:
     get:
       summary: Run an installed query
@@ -651,38 +743,6 @@ paths:
           type: string
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-
-  /rebuildnow/{graph_name}:
-    get:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    post:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: mygraph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
 
 
   /shortestpath/{graph_name}:
