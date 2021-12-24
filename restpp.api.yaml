@@ -7,11 +7,181 @@ info:
 servers:
   - url: "http://192.168.0.105:9000"
 tags:
-  - name: done
-    description: Specification tested
   - name: query
     description: Endpoints for querying
+  - name: diagnostics
+    description: Endpoints for querying
 paths:
+  /version/{graph_name}:
+    get:
+      summary: Show component versions
+      description: |
+        This endpoint returns the GIT versions of all components of the system.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_show_component_versions
+      operationId: version
+      tags:
+        - diagnostics
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /echo/{graph_name}:
+    get:
+      summary: Echo
+      description: |
+        A simple diagnostic utility.
+        Expected response is {"message": "Hello GSQL"}.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
+      operationId: echoGet
+      tags:
+        - diagnostics
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    post:
+      summary: Echo
+      description: |
+        A simple diagnostic utility.
+        Expected response is {"message": "Hello GSQL"}.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
+      operationId: echoPost
+      tags:
+        - diagnostics
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /statistics/{graph_name}:
+    get:
+      summary: Show query performance
+      description: |
+        Returns real-time query performance statistics over the given time period, as specified by the **seconds** parameter.
+        
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_show_query_performance
+      operationId: statistics
+      tags:
+        - diagnostics
+      parameters:
+        - name: seconds
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 10
+          description: Duration of statistics collection (1 ≤ n ≤ 60).
+        - name: segments
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 10
+          description: |
+            Integer that indicates the number of segments that LatencyPercentile array in the response will be split into.
+            The value for this endpoint must be between 1 and 100 and has a default value of 10.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /endpoints/{graph_name}:
+    get:
+      summary: List all endpoints
+      description: |
+        This endpoint returns a list of the installed endpoints and their parameters.
+        There are three types of endpoints, described in the table below.
+          * builtin - Endpoints presinstalled in TigerGraph (like this one)
+          * dynamic - Endpoints generated when installing GSQL queries
+          * static - User installed endpoints
+
+        To include one or more of the endpoint types in the output,  include the endpoint type
+        in the parameter query string and set its value to true.
+        If no type parameters are provided, all endpoints are returned.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_all_endpoints
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/json-catalog
+      operationId: endpoints
+      parameters:
+        - name: builtin
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+          description: trueEndpoints presinstalled in TigerGraph (like this one).
+        - name: dynamic
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+          description: trueEndpoints generated when installing GSQL queries.
+        - name: static
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+          description: trueUser installed endpoints.
+      tags:
+        - diagnostics
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
   /query/{graph_name}/{query_name}:
     get:
       summary: Run an installed query
@@ -43,7 +213,6 @@ paths:
           explode: true
       tags:
         - query
-        - done
       responses:
         '200':
           description: Query result
@@ -80,7 +249,6 @@ paths:
               type: object
       tags:
         - query
-        - done
       responses:
         '200':
           description: Query result
@@ -261,7 +429,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
       - name: vertex_type
         in: path
@@ -296,7 +464,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
       - name: edge_type
         in: path
@@ -362,7 +530,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
       - name: vertex_type
         in: path
@@ -408,7 +576,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -439,56 +607,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-
-  /echo/{graph_name}:
-    get:
-      summary: TBD
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    post:
-      summary: TBD
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: my_graph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-  /endpoints/{graph_name}:
-    get:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /query_result/{requestid}:
@@ -530,7 +649,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -561,7 +680,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -592,7 +711,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /showlicenseinfo/{graph_name}:
@@ -612,7 +731,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -642,51 +761,8 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-
-  /statistics/{graph_name}:
-    get:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: my_graph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-
-  /version/{graph_name}:
-    get:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: my_graph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
 
   /abortquery/{graph_name}:
     post:
@@ -714,7 +790,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -735,7 +811,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -756,7 +832,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -777,7 +853,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
@@ -797,7 +873,7 @@ paths:
         required: true
         schema:
           type: string
-          example: my_graph
+          example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 components:
