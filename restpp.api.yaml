@@ -3,7 +3,7 @@ info:
   title: TigerGraph REST++ API
   description: Title
   version: 1.0.0
-  contact: {}
+  contact: { }
 servers:
   - url: "http://192.168.0.105:9000"
 tags:
@@ -95,10 +95,13 @@ paths:
       parameters:
         - name: seconds
           in: query
-          required: true
+          required: false
           schema:
             type: integer
             example: 10
+            minimum: 1
+            maximum: 60
+            default: 10
           description: Duration of statistics collection (1 ≤ n ≤ 60).
         - name: segments
           in: query
@@ -106,6 +109,9 @@ paths:
           schema:
             type: integer
             example: 10
+            minimum: 1
+            maximum: 100
+            default: 10
           description: |
             Integer that indicates the number of segments that LatencyPercentile array in the response will be split into.
             The value for this endpoint must be between 1 and 100 and has a default value of 10.
@@ -172,7 +178,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HelloResponse'
+                $ref: '#/components/schemas/AnyObject'
     parameters:
       - name: graph_name
         in: path
@@ -312,6 +318,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryResponse'
+        404:
+          $ref: "#/components/responses/endpointNotFound"
+        408:
+          $ref: "#/components/responses/queryTimeout"
     post:
       summary: Run an installed query
       description: |
@@ -348,6 +358,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryResponse'
+        404:
+          $ref: "#/components/responses/endpointNotFound"
+        408:
+          $ref: "#/components/responses/queryTimeout"
     parameters:
       - name: graph_name
         in: path
@@ -364,7 +378,7 @@ paths:
       - in: header
         name: GSQL-REPLICA
         description: |
-          f you have a TigerGraph HA cluster, you can specify a query to run on a particular replica
+          If you have a TigerGraph HA cluster, you can specify a query to run on a particular replica
           with the HTTP header GSQL-REPLICA. The value of the header needs to be an integer within
           the range one to the replication factor of the cluster. If you supply a invalid value for the header,
           the request will return an error.
@@ -390,6 +404,44 @@ paths:
         schema:
           type: number
         required: false
+  /showprocesslist/{graph_name}:
+    get:
+      summary: List running queries
+      description: |
+        This endpoint reports statistics of running queries of a graph: the query’s request ID,
+        start time, expiration time, and the REST endpoint’s URL
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_running_queries
+      operationId: showProcessListGet
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessListResponse' # TODO I see additional field ("code": "REST-0000") at the end
+    post:
+      summary: listed in /endpoints results, but not mentioned in the docs...
+      operationId: showProcessListPost
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessListResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /graph/delete_by_type/vertices/{vertex_type}/:
     delete:
@@ -795,35 +847,6 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
-  /showprocesslist/{graph_name}:
-    get:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    post:
-      summary: TBD
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: mygraph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
   /abortquery/{graph_name}:
     post:
       summary: TBD
@@ -954,38 +977,12 @@ components:
           type: string
     StatisticsResponse:
       type: object
-      properties:
-        GET /statistics/{graph_name}:
-          type: object
-          properties:
-            CompletedRequests:
-              type: number
-            QPS:
-              type: number
-            TimeoutRequests:
-              type: number
-            AverageLatency:
-              type: number
-            MaxLatency:
-              type: number
-            MinLatency:
-              type: number
-            LatencyPercentile:
-              type: array
-              items:
-                type: number
+      additionalProperties: true
     QueryResponse:
       type: object
       properties:
         version:
-          type: object
-          properties:
-            edition:
-              type: string
-            api:
-              type: string
-            schema:
-              type: number
+          $ref: '#/components/schemas/Version'
         error:
           type: boolean
         message:
@@ -994,4 +991,94 @@ components:
           type: array
           items:
             type: object
-            properties: {}
+            properties: { }
+    AnyObject:
+      type: object
+      additionalProperties: true
+    Version:
+      type: object
+      properties:
+        edition:
+          type: string
+        api:
+          type: string
+        schema:
+          type: integer
+    ProcessListResponse:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        error:
+          type: boolean
+        message:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessInfo'
+        code:
+          type: string
+          example: REST-0000
+    ProcessInfo:
+      type: object
+      properties:
+        requestid:
+          type: string
+        startTime:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+          example: 2021-12-25 08:20:08.272
+        expirationTime:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+          example: 2021-12-25 08:20:08.272
+        url:
+          type: string
+        elapsedTime:
+          type: number
+    ErrorResponse:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        error:
+          type: boolean
+        message:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+        code:
+          type: string
+          example: REST-1000
+      required: [ version, error, message, code ]
+  responses:
+    endpointNotFound:
+      description: 404 response
+      content:
+        application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example: |
+            {
+              "version":{
+                "edition":"enterprise",
+                "api":"v2",
+                "schema":0
+              },
+              "error":true,
+              "message":"Endpoint is not found from url = /query/LDBC_SNB/aa, please use GET /endpoints to list all valid endpoints.",
+              "code":"REST-1000"
+            }
+    queryTimeout:
+      description: query timeout
+      content:
+        application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example: |
+            {"error":true,
+            "message":"The query didn't finish because it exceeded the query timeout threshold (16 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (65606.RESTPP_1_1.1640505469413.N) for details. Try increase RESTPP.Factory.DefaultLoadingTimeoutSec or add header GSQL-TIMEOUT to override default system timeout. ",
+            "results":[],"code":"REST-3002"}
