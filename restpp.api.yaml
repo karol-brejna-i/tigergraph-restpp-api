@@ -370,7 +370,7 @@ paths:
       - in: header
         name: GSQL-REPLICA
         description: |
-          f you have a TigerGraph HA cluster, you can specify a query to run on a particular replica
+          If you have a TigerGraph HA cluster, you can specify a query to run on a particular replica
           with the HTTP header GSQL-REPLICA. The value of the header needs to be an integer within
           the range one to the replication factor of the cluster. If you supply a invalid value for the header,
           the request will return an error.
@@ -396,6 +396,43 @@ paths:
         schema:
           type: number
         required: false
+
+  /showprocesslist/{graph_name}:
+    get:
+      summary: List running queries
+      description: |
+        This endpoint reports statistics of running queries of a graph: the query’s request ID,
+        start time, expiration time, and the REST endpoint’s URL
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_running_queries
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessListResponse' # TODO I see additional field ("code": "REST-0000") at the end
+    post:
+      summary: listed in /endpoints results, but not mentioned in the docs...
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessListResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /graph/delete_by_type/vertices/{vertex_type}/:
     delete:
@@ -801,35 +838,6 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
 
-  /showprocesslist/{graph_name}:
-    get:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    post:
-      summary: TBD
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: mygraph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
   /abortquery/{graph_name}:
     post:
       summary: TBD
@@ -965,14 +973,7 @@ components:
       type: object
       properties:
         version:
-          type: object
-          properties:
-            edition:
-              type: string
-            api:
-              type: string
-            schema:
-              type: number
+          $ref: '#/components/schemas/Version'
         error:
           type: boolean
         message:
@@ -985,3 +986,42 @@ components:
     AnyObject:
       type: object
       additionalProperties: true
+    Version:
+      type: object
+      properties:
+        edition:
+          type: string
+        api:
+          type: string
+        schema:
+          type: integer
+    ProcessListResponse:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        error:
+          type: boolean
+        message:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessInfo'
+    ProcessInfo:
+      type: object
+      properties:
+        requestid:
+          type: string
+        startTime:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+          example: 2021-12-25 08:20:08.272
+        expirationTime:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+          example: 2021-12-25 08:20:08.272
+        url:
+          type: string
+        elapsedTime:
+          type: number
