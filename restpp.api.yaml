@@ -3,7 +3,7 @@ info:
   title: TigerGraph REST++ API
   description: Title
   version: 1.0.0
-  contact: {}
+  contact: { }
 servers:
   - url: "http://192.168.0.105:9000"
 tags:
@@ -318,6 +318,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryResponse'
+        404:
+          $ref: "#/components/responses/endpointNotFound"
+        408:
+          $ref: "#/components/responses/queryTimeout"
     post:
       summary: Run an installed query
       description: |
@@ -354,6 +358,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryResponse'
+        404:
+          $ref: "#/components/responses/endpointNotFound"
+        408:
+          $ref: "#/components/responses/queryTimeout"
     parameters:
       - name: graph_name
         in: path
@@ -396,7 +404,6 @@ paths:
         schema:
           type: number
         required: false
-
   /showprocesslist/{graph_name}:
     get:
       summary: List running queries
@@ -405,6 +412,7 @@ paths:
         start time, expiration time, and the REST endpoint’s URL
 
         See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_running_queries
+      operationId: showProcessListGet
       tags:
         - query
       responses:
@@ -416,6 +424,7 @@ paths:
                 $ref: '#/components/schemas/ProcessListResponse' # TODO I see additional field ("code": "REST-0000") at the end
     post:
       summary: listed in /endpoints results, but not mentioned in the docs...
+      operationId: showProcessListPost
       tags:
         - query
       responses:
@@ -982,7 +991,7 @@ components:
           type: array
           items:
             type: object
-            properties: {}
+            properties: { }
     AnyObject:
       type: object
       additionalProperties: true
@@ -1008,6 +1017,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProcessInfo'
+        code:
+          type: string
+          example: REST-0000
     ProcessInfo:
       type: object
       properties:
@@ -1025,3 +1037,48 @@ components:
           type: string
         elapsedTime:
           type: number
+    ErrorResponse:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        error:
+          type: boolean
+        message:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+        code:
+          type: string
+          example: REST-1000
+      required: [ version, error, message, code ]
+  responses:
+    endpointNotFound:
+      description: 404 response
+      content:
+        application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example: |
+            {
+              "version":{
+                "edition":"enterprise",
+                "api":"v2",
+                "schema":0
+              },
+              "error":true,
+              "message":"Endpoint is not found from url = /query/LDBC_SNB/aa, please use GET /endpoints to list all valid endpoints.",
+              "code":"REST-1000"
+            }
+    queryTimeout:
+      description: query timeout
+      content:
+        application/json":
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example: |
+            {"error":true,
+            "message":"The query didn't finish because it exceeded the query timeout threshold (16 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (65606.RESTPP_1_1.1640505469413.N) for details. Try increase RESTPP.Factory.DefaultLoadingTimeoutSec or add header GSQL-TIMEOUT to override default system timeout. ",
+            "results":[],"code":"REST-3002"}
