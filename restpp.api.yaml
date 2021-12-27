@@ -5,7 +5,18 @@ info:
   version: 1.0.0
   contact: { }
 servers:
-  - url: "http://192.168.0.105:9000"
+  - url: "{protocol}://{host}:{port}"
+    variables:
+      protocol:
+        enum:
+          - 'http'
+          - 'https'
+        default:
+          https
+      host:
+        default: 127.0.0.1
+      port:
+        default: '9000'
 tags:
   - name: query
     description: Endpoints for querying
@@ -39,13 +50,13 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /echo/{graph_name}:
+    summary: Echo
+    description: |
+      A simple diagnostic utility.
+      Expected response is {"message": "Hello GSQL"}.
+      
+      See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
     get:
-      summary: Echo
-      description: |
-        A simple diagnostic utility.
-        Expected response is {"message": "Hello GSQL"}.
-
-        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
       operationId: echoGet
       tags:
         - diagnostics
@@ -57,12 +68,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/HelloResponse'
     post:
-      summary: Echo
-      description: |
-        A simple diagnostic utility.
-        Expected response is {"message": "Hello GSQL"}.
-
-        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
       operationId: echoPost
       tags:
         - diagnostics
@@ -400,10 +405,21 @@ paths:
           type: number
         required: false
       - in: header
+        name: GSQL-ASYNC
+        description: |
+          Installed queries can run in Detached Mode. To do this, use the GSQL-ASYNCheader and set its value to true. 
+          The results and status of the queries run in Detached Mode can be retrieved with a query ID, 
+          which is returned immediately when queries are executed in Detached Mode.
+        schema:
+          type: boolean
+          default: false
+        required: false
+      - in: header
         name: RESPONSE-LIMIT
         schema:
           type: number
         required: false
+
   /showprocesslist/{graph_name}:
     get:
       summary: List running queries
@@ -442,6 +458,59 @@ paths:
           type: string
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
+
+  /query_status/{graph_name}:
+    #   "GET /query_status/{graph_name}" : {
+    #      "parameters" : {
+    #         "graph_name" : {
+    #            "default" : "",
+    #            "max_count" : 1,
+    #            "min_count" : 0,
+    #            "type" : "STRING"
+    #         },
+    #         "requestid" : {
+    #            "max_count" : 100,
+    #            "min_count" : 0,
+    #            "type" : "STRING"
+    #         }
+    #      }
+    #   },
+    get:
+      summary: Check query status (Detached Mode) **NOT TESTED**
+      description: |
+        This endpoint allows you to check the status of a query run in detached mode.
+        
+        TODO: $ curl -s -X GET "http://localhost:9000/query_status?graph_name=poc_graph&requestid=4.RESTPP_1_1.1599672031541.N"
+        shows that graph_name is not a path param
+        TODO: /endpoints shows 'GET /query_status/{graph_name}"'
+        TODO:  curl -X 'GET'   'http://192.168.0.105:9000/query_status?graph_name=mygraph&requestid=196611.RESTPP_1_1.1630601692834.N'   -H 'accept: application/json'
+        PRODUCED:   {"version":{"edition":"enterprise","api":"v2","schema":0},"error":false,"message":"","results":[],"unknown_requestid":["196611.RESTPP_1_1.1630601692834.N"],"code":"REST-0000"}karol@kbrejna-MOBL1:/mnt/c/Users/kbrejna/git-projects/tigergraph-restpp-client$
+        so, make sure if one or both version work
+      operationId: queryStatus
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessListResponse' # it's like ProcessListResponse, but ProcessInfo items are enriched with: "elapsedTime": 19,"status": "success"
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+      - name: requestid
+        in: query
+        required: true
+        schema:
+          type: string
+          example: 196611.RESTPP_1_1.1630601692834.N
+        description: The id of a query request.
 
   /graph/delete_by_type/vertices/{vertex_type}/:
     delete:
@@ -777,26 +846,6 @@ paths:
           example: 196611.RESTPP_1_1.1630601692834.N
         description: The id of a query request.
 
-  /query_status/{graph_name}:
-    get:
-      summary: TBD
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: mygraph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-
   /shortestpath/{graph_name}:
     get:
       summary: TBD
@@ -1081,4 +1130,9 @@ components:
           example: |
             {"error":true,
             "message":"The query didn't finish because it exceeded the query timeout threshold (16 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (65606.RESTPP_1_1.1640505469413.N) for details. Try increase RESTPP.Factory.DefaultLoadingTimeoutSec or add header GSQL-TIMEOUT to override default system timeout. ",
+            "results":[],"code":"REST-3002"}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           $ref: "#/components/schemas/ErrorResponse"
+          example: |
+            {"error":true,
+            "message":"The query didn't finish because it exceeded the query timeout threshold (16 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (65606.RESTPP_1_1.1640505469413.N) for details. Try increase RESTPP.Factory.DefaultLoadingTimeoutSec or add header GSQL-TIMEOUT to override default system timeout. ",
             "results":[],"code":"REST-3002"}
+                                                                                                                                                                                            
