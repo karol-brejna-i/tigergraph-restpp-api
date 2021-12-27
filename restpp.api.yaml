@@ -50,13 +50,13 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /echo/{graph_name}:
-    summary: Echo
-    description: |
-      A simple diagnostic utility.
-      Expected response is {"message": "Hello GSQL"}.
-      
-      See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
     get:
+      summary: Echo
+      description: |
+        A simple diagnostic utility.
+        Expected response is {"message": "Hello GSQL"}.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
       operationId: echoGet
       tags:
         - diagnostics
@@ -68,6 +68,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/HelloResponse'
     post:
+      summary: Echo
+      description: |
+        A simple diagnostic utility.
+        Expected response is {"message": "Hello GSQL"}.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_echo
       operationId: echoPost
       tags:
         - diagnostics
@@ -388,7 +394,7 @@ paths:
           the range one to the replication factor of the cluster. If you supply a invalid value for the header,
           the request will return an error.
         schema:
-          type: number
+          type: integer
         required: false
       - in: header
         name: GSQL-THREAD-LIMIT
@@ -397,12 +403,17 @@ paths:
           The number of threads used by a query means the number of vCPUs used by the query.
           By default, a query will use all threads that are available on a machine.
         schema:
-          type: number
+          type: integer
         required: false
       - in: header
         name: GSQL-TIMEOUT
+        description: |
+          By default, an HTTP request in the TigerGraph system times out after 16 seconds. 
+          To customize this timeout limit for a particular query instance, you can set the GSQL-TIMEOUT parameter in the request header.
+          The value is an integer in miliseconds.
+          See: https://docs.tigergraph.com/tigergraph-server/current/api/intro#_gsql_query_timeout
         schema:
-          type: number
+          type: integer
         required: false
       - in: header
         name: GSQL-ASYNC
@@ -416,8 +427,13 @@ paths:
         required: false
       - in: header
         name: RESPONSE-LIMIT
+        description: |
+          Allows for specyfing the response size limit (in bytes) of an HTTP request.
+          If the response size is larger than the given limit, an error message will be returned instead of the actual query result.
+          
+          See: https://docs.tigergraph.com/tigergraph-server/current/api/intro#_response_size
         schema:
-          type: number
+          type: integer
         required: false
 
   /showprocesslist/{graph_name}:
@@ -437,9 +453,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessListResponse' # TODO I see additional field ("code": "REST-0000") at the end
+                $ref: '#/components/schemas/ProcessListResponse'
     post:
-      summary: listed in /endpoints results, but not mentioned in the docs...
+      summary: TODO XXX listed in /endpoints results, but not mentioned in the docs...
       operationId: showProcessListPost
       tags:
         - query
@@ -460,32 +476,12 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /query_status/{graph_name}:
-    #   "GET /query_status/{graph_name}" : {
-    #      "parameters" : {
-    #         "graph_name" : {
-    #            "default" : "",
-    #            "max_count" : 1,
-    #            "min_count" : 0,
-    #            "type" : "STRING"
-    #         },
-    #         "requestid" : {
-    #            "max_count" : 100,
-    #            "min_count" : 0,
-    #            "type" : "STRING"
-    #         }
-    #      }
-    #   },
     get:
-      summary: Check query status (Detached Mode) **NOT TESTED**
+      summary: Check query status (Detached Mode)
       description: |
         This endpoint allows you to check the status of a query run in detached mode.
         
-        TODO: $ curl -s -X GET "http://localhost:9000/query_status?graph_name=poc_graph&requestid=4.RESTPP_1_1.1599672031541.N"
-        shows that graph_name is not a path param
-        TODO: /endpoints shows 'GET /query_status/{graph_name}"'
-        TODO:  curl -X 'GET'   'http://192.168.0.105:9000/query_status?graph_name=mygraph&requestid=196611.RESTPP_1_1.1630601692834.N'   -H 'accept: application/json'
-        PRODUCED:   {"version":{"edition":"enterprise","api":"v2","schema":0},"error":false,"message":"","results":[],"unknown_requestid":["196611.RESTPP_1_1.1630601692834.N"],"code":"REST-0000"}karol@kbrejna-MOBL1:/mnt/c/Users/kbrejna/git-projects/tigergraph-restpp-client$
-        so, make sure if one or both version work
+        https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_check_query_status_detached_modes
       operationId: queryStatus
       tags:
         - query
@@ -495,7 +491,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProcessListResponse' # it's like ProcessListResponse, but ProcessInfo items are enriched with: "elapsedTime": 19,"status": "success"
+                $ref: '#/components/schemas/QueryStatusResponse'
     parameters:
       - name: graph_name
         in: path
@@ -504,13 +500,51 @@ paths:
           type: string
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
-      - name: requestid
-        in: query
+      - $ref: '#/components/parameters/MultipleRequestIdParam'
+
+  /abortquery/{graph_name}:
+    get:
+      summary: Abort a query
+      description: |
+        This endpoint safely aborts a selected query by ID or all queries of an endpoint by endpoint URL of a graph.
+        
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_abort_a_query
+      operationId: abortQueryGet
+      tags:
+        - query
+      parameters:
+        - $ref: '#/components/parameters/SingleRequestIdParam'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbortQueryResponse'
+    post:
+      summary: Abort a query
+      description: |
+        This endpoint safely aborts a selected query by ID or all queries of an endpoint by endpoint URL of a graph.
+        
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_abort_a_query
+      operationId: abortQueryPost
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbortQueryResponse'
+    parameters:
+      - name: graph_name
+        in: path
         required: true
         schema:
           type: string
-          example: 196611.RESTPP_1_1.1630601692834.N
-        description: The id of a query request.
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /graph/delete_by_type/vertices/{vertex_type}/:
     delete:
@@ -823,29 +857,6 @@ paths:
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
-  /query_result/{requestid}:
-    get:
-      summary: TBD
-      description: |
-        This endpoint allows you to check the results of queries run in Detached Mode if they have finished running.
-        If the query is still running, the endpoint will respond with an error and a message saying
-        "Unable to retrieve result for query <requestid>". Ensure that the query is finished before checking its result.
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: requestid
-        in: path
-        required: true
-        schema:
-          type: string
-          example: 196611.RESTPP_1_1.1630601692834.N
-        description: The id of a query request.
-
   /shortestpath/{graph_name}:
     get:
       summary: TBD
@@ -895,37 +906,6 @@ paths:
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
-
-  /abortquery/{graph_name}:
-    post:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    get:
-      summary: TBD
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: mygraph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-
   /builtins/{graph_name}:
     post:
       summary: TBD
@@ -945,7 +925,6 @@ paths:
           type: string
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
 
   /ddl/{graph_name}:
     post:
@@ -967,7 +946,6 @@ paths:
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
-
   /graph/{graph_name}:
     post:
       summary: TBD
@@ -987,7 +965,6 @@ paths:
           type: string
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
 
   /restpploader/{graph_name}:
     post:
@@ -1015,13 +992,6 @@ components:
       properties:
         error:
           type: boolean
-        message:
-          type: string
-    MessageResponse:
-      type: object
-      properties:
-        error:
-          type: string
         message:
           type: string
     StatisticsResponse:
@@ -1067,8 +1037,66 @@ components:
           items:
             $ref: '#/components/schemas/ProcessInfo'
         code:
+          $ref: '#/components/schemas/Code'
+      required: [ version, error, message, results, code ]
+    QueryStatusResponse:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        error:
+          type: boolean
+        message:
           type: string
-          example: REST-0000
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryStatusItem'
+        unknown_requestid:
+          type: array
+          items:
+            type: string
+        code:
+          $ref: '#/components/schemas/Code'
+      required: [ version, error, message, results, code ]
+    AbortQueryResponse:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        error:
+          type: boolean
+        message:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbortedQueryList'
+        unknown_requestid:
+          type: array
+          items:
+            type: string
+        code:
+          $ref: '#/components/schemas/Code'
+      required: [ version, error, message, results, code ]
+    AbortedQueryList:
+      type: object
+      properties:
+        aborted_queries:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbortStatusItem'
+    Code:
+      type: string
+      description: The code of the response
+      example: REST-0000
+    AbortStatusItem:
+      type: object
+      properties:
+        requestid:
+          type: string
+        url:
+          type: string
     ProcessInfo:
       type: object
       properties:
@@ -1085,7 +1113,22 @@ components:
         url:
           type: string
         elapsedTime:
-          type: number
+          type: integer
+    QueryStatusItem:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ProcessInfo'
+        - type: object
+          properties:
+            status:
+              type: string
+              description: The status of the given query.
+              enum:
+                - success
+                - timeout
+                - aborted
+                - running
+              example: success
     ErrorResponse:
       type: object
       properties:
@@ -1103,6 +1146,44 @@ components:
           type: string
           example: REST-1000
       required: [ version, error, message, code ]
+
+  parameters:
+    SingleRequestIdParam:
+      name: requestid
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The id of a query request.
+      examples:
+        oneId:
+          summary: Example of a single ID
+          value: 196611.RESTPP_1_1.1630601692834.N
+        allOfThem:
+          summary: Example for all the queries
+          value: all
+    MultipleRequestIdParam:
+      name: requestid
+      in: query
+      required: true
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
+      description: The id of a query request.
+      examples:
+        oneId:
+          summary: Example of a single ID
+          value: 196611.RESTPP_1_1.1630601692834.N
+        allOfThem:
+          summary: Example for all the queries
+          value: all
+        coupleOfThem:
+          summary: Example for all the queries
+          value: [ 196611.RESTPP_1_1.1630601692834.N, 336611.RESTPP_1_1.1111111111111.N ]
+
   responses:
     endpointNotFound:
       description: 404 response
@@ -1130,9 +1211,4 @@ components:
           example: |
             {"error":true,
             "message":"The query didn't finish because it exceeded the query timeout threshold (16 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (65606.RESTPP_1_1.1640505469413.N) for details. Try increase RESTPP.Factory.DefaultLoadingTimeoutSec or add header GSQL-TIMEOUT to override default system timeout. ",
-            "results":[],"code":"REST-3002"}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           $ref: "#/components/schemas/ErrorResponse"
-          example: |
-            {"error":true,
-            "message":"The query didn't finish because it exceeded the query timeout threshold (16 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (65606.RESTPP_1_1.1640505469413.N) for details. Try increase RESTPP.Factory.DefaultLoadingTimeoutSec or add header GSQL-TIMEOUT to override default system timeout. ",
             "results":[],"code":"REST-3002"}
-                                                                                                                                                                                            
