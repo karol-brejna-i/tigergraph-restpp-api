@@ -95,19 +95,19 @@ paths:
         - name: builtin
           in: query
           schema:
-            type: boolean
+            type: string
             example: "true"
           description: (Optional) Endpoints presinstalled in TigerGraph (like this one).
         - name: dynamic
           in: query
           schema:
-            type: boolean
+            type: string
             example: "true"
           description: (Optional) Endpoints generated when installing GSQL queries.
         - name: static
           in: query
           schema:
-            type: boolean
+            type: string
             example: "true"
           description: (Optional) User installed endpoints.
       responses:
