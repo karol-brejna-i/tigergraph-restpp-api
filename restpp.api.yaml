@@ -440,8 +440,8 @@ paths:
     get:
       summary: List running queries
       description: |
-        This endpoint reports statistics of running queries of a graph: the query’s request ID,
-        start time, expiration time, and the REST endpoint’s URL
+        This endpoint reports statistics of running queries of a graph: the query's request ID,
+        start time, expiration time, and the REST endpoint's URL.
 
         See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_list_running_queries
       operationId: showProcessListGet
@@ -502,6 +502,55 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
       - $ref: '#/components/parameters/MultipleRequestIdParam'
 
+  /query_result/{requestid}:
+    get:
+      summary: Check query results (Detached Mode)
+      description: |
+        This endpoint allows you to check the results of queries run in Detached Mode if they have finished running.
+        If the query is still running, the endpoint will respond with an error and a message saying
+        "Unable to retrieve result for query <requestid>". Ensure that the query is finished before checking its result.
+
+        See: https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_check_query_results_detached_mode
+      operationId: queryResult
+      tags:
+        - query
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResultResponse' # TODO in case of aborted query there is additional CODE
+              examples:
+                timeouted:
+                  summary: Result for query that timed out.
+                  value: |
+                    {
+                      "error": true,
+                      "message": "The query didn't finish because it exceeded the query timeout threshold (60 seconds). Please check GSE log for license expiration and RESTPP/GPE log with request id (16973839.RESTPP_1_1.1640685746452.N) for details. Try increase header GSQL-TIMEOUT value. ",
+                      "results": [],
+                      "code": "REST-3000"
+                    }
+                ok:
+                  summary: Result for query that finished successfully.
+                  value: |
+                    {
+                      "version": { "edition": "enterprise", "api": "v2", "schema": 0 },
+                      "error": false,
+                      "message": "",
+                      "results": [
+                        { "\"aa works!\"": "aa works!" }
+                      ]
+                    }
+    parameters:
+      - name: requestid
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The id of a query request.
+        example: 196611.RESTPP_1_1.1630601692834.N
+
   /abortquery/{graph_name}:
     get:
       summary: Abort a query
@@ -513,7 +562,7 @@ paths:
       tags:
         - query
       parameters:
-        - $ref: '#/components/parameters/SingleRequestIdParam'
+        - $ref: '#/components/parameters/SingleOrAllRequestIdParam'
       responses:
         200:
           description: OK
@@ -794,8 +843,6 @@ paths:
           example: 11223342243
         description: The ID of the vertex.
 
-
-
   /allpaths/{graph_name}:
     get:
       summary: TBD
@@ -998,6 +1045,27 @@ components:
       type: object
       additionalProperties: true
     QueryResponse:
+      oneOf:
+        - $ref: '#/components/schemas/QueryResultResponse'
+        - $ref: '#/components/schemas/QuerySubmittedResponse'
+      # XXX TODO the oneOf construct "fools" code generators and deserialization; to generate the client code, use this:
+#      type: object
+#      properties:
+#        version:
+#          $ref: '#/components/schemas/Version'
+#        error:
+#          type: boolean
+#        message:
+#          type: string
+#        results:
+#          type: array
+#          items:
+#            type: object
+#            properties: { }
+#        request_id:
+#          type: string
+#          example: 65546.RESTPP_1_1.1640626135521.N
+    QueryResultResponse:
       type: object
       properties:
         version:
@@ -1011,6 +1079,18 @@ components:
           items:
             type: object
             properties: { }
+    QuerySubmittedResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+        message:
+          type: string
+        request_id:
+          type: string
+          example: 65546.RESTPP_1_1.1640626135521.N
+      example: |
+        {"error":false,"message":"The query is successfully submitted. Please check query status using the request id.","request_id":"65546.RESTPP_1_1.1640626135521.N"}
     AnyObject:
       type: object
       additionalProperties: true
@@ -1053,6 +1133,10 @@ components:
           items:
             $ref: '#/components/schemas/QueryStatusItem'
         unknown_requestid:
+          description: |
+            If one or more of the provided query IDs (requestid) are invalid, the return JSON will include an unknown_requestid
+            field containing all the invalid query IDs. If a query ID is marked as unknown,
+            it means either the query does not exist or that it was not run in Detached Mode.
           type: array
           items:
             type: string
@@ -1115,7 +1199,6 @@ components:
         elapsedTime:
           type: integer
     QueryStatusItem:
-      type: object
       allOf:
         - $ref: '#/components/schemas/ProcessInfo'
         - type: object
@@ -1129,6 +1212,33 @@ components:
                 - aborted
                 - running
               example: success
+      # XXX TODO the allOf construct "fools" code generators and deserialization; to generate the client code, use this:
+#      type: object
+#      properties:
+#        requestid:
+#          type: string
+#        startTime:
+#          type: string
+#          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+#          example: 2021-12-25 08:20:08.272
+#        expirationTime:
+#          type: string
+#          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+#          example: 2021-12-25 08:20:08.272
+#        url:
+#          type: string
+#        elapsedTime:
+#          type: integer
+#        status:
+#          type: string
+#          description: The status of the given query.
+#          enum:
+#            - success
+#            - timeout
+#            - aborted
+#            - running
+#          example: success
+
     ErrorResponse:
       type: object
       properties:
@@ -1148,7 +1258,15 @@ components:
       required: [ version, error, message, code ]
 
   parameters:
-    SingleRequestIdParam:
+    RequestIdParam:
+      name: requestid
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The id of a query request.
+      example: 196611.RESTPP_1_1.1630601692834.N
+    SingleOrAllRequestIdParam:
       name: requestid
       in: query
       required: true

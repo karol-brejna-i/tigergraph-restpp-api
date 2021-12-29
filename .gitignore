@@ -7,4 +7,4 @@ out/
 *.report
 *.priv.*
 *.priv
-swagger-codegen-cli.jar
+swagger-codegen-cli*.jar
