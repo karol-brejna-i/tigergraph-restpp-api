@@ -595,6 +595,94 @@ paths:
           example: mygraph
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
+  /ddl/{graph_name}:
+    post:
+      summary: Run Loading Job
+      description: |
+        This endpoint is for loading data into a graph.
+        It submits data as an HTTP request payload, to be loaded into the graph by the DDL Loader.
+        The data payload can be formatted as generic CSV or JSON.
+
+        For more details, please see [GSQL Language Reference Part 1 - Defining Graphs and Loading Data.](https://docs.tigergraph.com/gsql-ref/3.2/ddl-and-loading/system-and-language-basics)
+
+        See https://docs.tigergraph.com/tigergraph-server/current/api/built-in-endpoints#_run_a_loading_job for details.
+      operationId: runLoadingJob
+      tags:
+        - loading
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelloResponse'
+    parameters:
+      - name: graph_name
+        in: path
+        required: true
+        schema:
+          type: string
+          example: mygraph
+        description: The name of the graph (REQUIRED in case of multiple graph in the database).
+      - name: tag
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Loading job name defined in your DDL loading job.
+      - name: filename
+        in: query
+        required: true
+        schema:
+          type: string
+          default: __GSQL_FILENAME__
+        description: File variable name or file path for the file containing the data.
+      - name: sep
+        in: query
+        required: false
+        description: Separator of CSV data. If your data is JSON, you do not need to specify this parameter. The default separator is a comma ",".
+        schema:
+          type: string
+          default: ","
+          maxLength: 4
+          minLength: 1
+      - name: eol
+        in: query
+        required: false
+        schema:
+          type: string
+          default: "\n"
+          maxLength: 4
+          minLength: 1
+        description: End-of-line character. Only one or two characters are allowed, except for the special case "\r\n". The default value is "\n"
+      - name: ack
+        in: query
+        schema:
+          type: string
+        description: |
+          "all": request will return after all GPE instances have acknowledged the POST request. 
+          "none": request will return immediately after RESTPP processed the POST request.
+
+          TODO XXX: the docs say it is optional; endpoint says it is required
+      - name: timeout
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+        description: Timeout in seconds. If set to 0, use system-wide endpoint timeout setting.
+      - name: concise
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: |
+          Timeout in seconds. If set to 0, use system-wide endpoint timeout setting.
+
+          TODO XXX: docs say it is optional; endpoint says it is required ("max_count" : 1,
+            "min_count" : 1)
+
   /graph/delete_by_type/vertices/{vertex_type}/:
     delete:
       summary: TBD
@@ -954,26 +1042,6 @@ paths:
         description: The name of the graph (REQUIRED in case of multiple graph in the database).
 
   /builtins/{graph_name}:
-    post:
-      summary: TBD
-
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HelloResponse'
-    parameters:
-      - name: graph_name
-        in: path
-        required: true
-        schema:
-          type: string
-          example: mygraph
-        description: The name of the graph (REQUIRED in case of multiple graph in the database).
-
-  /ddl/{graph_name}:
     post:
       summary: TBD
 
